@@ -6,15 +6,44 @@
 //! // tbi
 //! ```
 
-#![forbid(unsafe_code, rust_2018_idioms)]
+#![forbid(rust_2018_idioms)]
 #![deny(missing_debug_implementations, nonstandard_style)]
 #![warn(missing_docs, unreachable_pub)]
 #![feature(into_future)]
 
 use std::future::{Future, IntoFuture};
 use std::marker::PhantomData;
+use std::pin::Pin;
+use std::task::{Context, Poll};
 
-use async_std::task::JoinHandle;
+use async_std::task;
+
+/// A handle representing a task.
+#[derive(Debug)]
+pub struct JoinHandle<T>(Option<task::JoinHandle<T>>);
+
+impl<T> JoinHandle<T> {
+    /// Detaches the task to let it keep running in the background.
+    pub fn detach(self) {
+        std::mem::forget(self);
+    }
+}
+
+impl<T> Future for JoinHandle<T> {
+    type Output = T;
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let mut handle = self.0.as_mut().unwrap();
+        unsafe { Pin::new_unchecked(&mut handle) }.poll(cx)
+    }
+}
+
+/// Cancel a task when dropped.
+impl<T> Drop for JoinHandle<T> {
+    fn drop(&mut self) {
+        let handle = self.0.take().unwrap();
+        let _ = handle.cancel();
+    }
+}
 
 /// The `tasky` prelude.
 pub mod prelude {
@@ -84,7 +113,7 @@ impl<Fut: Future + 'static> IntoFuture for Builder<Fut, Local> {
     type IntoFuture = JoinHandle<Fut::Output>;
 
     fn into_future(self) -> Self::IntoFuture {
-        self.builder.local(self.future).unwrap()
+        JoinHandle(Some(self.builder.local(self.future).unwrap()))
     }
 }
 
@@ -98,7 +127,7 @@ where
     type IntoFuture = JoinHandle<Fut::Output>;
 
     fn into_future(self) -> Self::IntoFuture {
-        self.builder.spawn(self.future).unwrap()
+        JoinHandle(Some(self.builder.spawn(self.future).unwrap()))
     }
 }
 
