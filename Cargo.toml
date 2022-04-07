@@ -16,5 +16,6 @@ authors = [
 [features]
 
 [dependencies]
+async-std = { version = "1.10.0", features = ["unstable"] }
 
 [dev-dependencies]
