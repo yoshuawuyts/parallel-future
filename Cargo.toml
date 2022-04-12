@@ -17,5 +17,6 @@ authors = [
 
 [dependencies]
 async-std = { version = "1.10.0", features = ["unstable"] }
+pin-project = "1.0.10"
 
 [dev-dependencies]

@@ -6,11 +6,11 @@
 //! // tbi
 //! ```
 
-#![forbid(rust_2018_idioms)]
 #![deny(missing_debug_implementations, nonstandard_style)]
 #![warn(missing_docs, unreachable_pub)]
 #![feature(into_future)]
 
+use pin_project::{pin_project, pinned_drop};
 use std::future::{Future, IntoFuture};
 use std::marker::PhantomData;
 use std::pin::Pin;
@@ -18,36 +18,64 @@ use std::task::{Context, Poll};
 
 use async_std::task;
 
+/// The `tasky` prelude.
+pub mod prelude {
+    pub use super::FutureExt as _;
+}
+
 /// A handle representing a task.
 #[derive(Debug)]
-pub struct JoinHandle<T>(Option<task::JoinHandle<T>>);
+#[pin_project(PinnedDrop)]
+#[must_use = "futures do nothing unless you `.await` or poll them"]
+pub struct JoinHandle<Fut: Future, K: sealed::Kind> {
+    builder: Option<Builder<Fut, K>>,
+    #[pin]
+    handle: Option<task::JoinHandle<Fut::Output>>,
+}
 
-impl<T> JoinHandle<T> {
+impl<Fut: Future, K: sealed::Kind> JoinHandle<Fut, K> {
     /// Detaches the task to let it keep running in the background.
     pub fn detach(self) {
         std::mem::forget(self);
     }
 }
 
-impl<T> Future for JoinHandle<T> {
-    type Output = T;
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let mut handle = self.0.as_mut().unwrap();
-        unsafe { Pin::new_unchecked(&mut handle) }.poll(cx)
+impl<Fut: Future + 'static> Future for JoinHandle<Fut, Local> {
+    type Output = <Fut as Future>::Output;
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let mut this = self.project();
+        if let Some(builder) = this.builder.take() {
+            this.handle
+                .replace(builder.builder.local(builder.future).unwrap());
+        }
+        Pin::new(&mut this.handle.as_pin_mut().unwrap()).poll(cx)
+    }
+}
+
+impl<Fut> Future for JoinHandle<Fut, NonLocal>
+where
+    Fut: Future + Send + 'static,
+    Fut::Output: Send + 'static,
+{
+    type Output = <Fut as Future>::Output;
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let mut this = self.project();
+        if let Some(builder) = this.builder.take() {
+            this.handle
+                .replace(builder.builder.spawn(builder.future).unwrap());
+        }
+        Pin::new(&mut this.handle.as_pin_mut().unwrap()).poll(cx)
     }
 }
 
 /// Cancel a task when dropped.
-impl<T> Drop for JoinHandle<T> {
-    fn drop(&mut self) {
-        let handle = self.0.take().unwrap();
+#[pinned_drop]
+impl<Fut: Future, K: sealed::Kind> PinnedDrop for JoinHandle<Fut, K> {
+    fn drop(self: Pin<&mut Self>) {
+        let mut this = self.project();
+        let handle = this.handle.take().unwrap();
         let _ = handle.cancel();
     }
-}
-
-/// The `tasky` prelude.
-pub mod prelude {
-    pub use super::FutureExt as _;
 }
 
 /// Extend the `Future` trait.
@@ -87,12 +115,14 @@ pub struct Local;
 impl sealed::Kind for Local {}
 
 /// A nonlocal builder.
+/// What type of builder do we have?
 #[derive(Debug)]
 pub struct NonLocal;
 impl sealed::Kind for NonLocal {}
 
 /// Task builder that configures the settings of a new task.
 #[derive(Debug)]
+#[must_use = "async builders do nothing unless you call `into_future` or `.await` them"]
 pub struct Builder<Fut: Future, K: sealed::Kind> {
     kind: PhantomData<K>,
     future: Fut,
@@ -107,16 +137,6 @@ impl<Fut: Future, K: sealed::Kind> Builder<Fut, K> {
     }
 }
 
-impl<Fut: Future + 'static> IntoFuture for Builder<Fut, Local> {
-    type Output = Fut::Output;
-
-    type IntoFuture = JoinHandle<Fut::Output>;
-
-    fn into_future(self) -> Self::IntoFuture {
-        JoinHandle(Some(self.builder.local(self.future).unwrap()))
-    }
-}
-
 impl<Fut> IntoFuture for Builder<Fut, NonLocal>
 where
     Fut::Output: Send,
@@ -124,10 +144,29 @@ where
 {
     type Output = Fut::Output;
 
-    type IntoFuture = JoinHandle<Fut::Output>;
+    type IntoFuture = JoinHandle<Fut, NonLocal>;
 
     fn into_future(self) -> Self::IntoFuture {
-        JoinHandle(Some(self.builder.spawn(self.future).unwrap()))
+        JoinHandle {
+            builder: Some(self),
+            handle: None,
+        }
+    }
+}
+
+impl<Fut> IntoFuture for Builder<Fut, Local>
+where
+    Fut: Future + 'static,
+{
+    type Output = Fut::Output;
+
+    type IntoFuture = JoinHandle<Fut, Local>;
+
+    fn into_future(self) -> Self::IntoFuture {
+        JoinHandle {
+            builder: Some(self),
+            handle: None,
+        }
     }
 }
 
