@@ -50,13 +50,6 @@ pub struct JoinHandle<Fut: Future, K: sealed::Kind> {
     handle: Option<task::JoinHandle<Fut::Output>>,
 }
 
-impl<Fut: Future, K: sealed::Kind> JoinHandle<Fut, K> {
-    /// Detaches the task to let it keep running in the background.
-    pub fn detach(self) {
-        std::mem::forget(self);
-    }
-}
-
 impl<Fut: Future + 'static> Future for JoinHandle<Fut, Local> {
     type Output = <Fut as Future>::Output;
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
