@@ -1,9 +1,26 @@
 //! fluent async task experiments
+//! 
+//! Read more about it in the [post on postfix
+//! spawn](https://blog.yoshuawuyts.com/postfix-spawn/). This is an experiment
+//! in moving the design of tasks from a model where "tasks are async threads"
+//! to a model where"tasks are parallel futures".
+//! 
+//! This means tasks will no longer start unless explicitly `.await`ed, dangling
+//! tasks become a thing of the past, and by default async Rust will act
+//! structurally concurrent.
 //!
 //! # Examples
 //!
 //! ```
-//! // tbi
+//! use tasky::prelude::*;
+//! 
+//! async_std::task::block_on(async {
+//!     let res = async { "nori is a horse" }
+//!         .spawn()
+//!         .name("meow".into())
+//!         .await;
+//!     assert_eq!(res, "nori is a horse");
+//! })
 //! ```
 
 #![deny(missing_debug_implementations, nonstandard_style)]
@@ -115,7 +132,6 @@ pub struct Local;
 impl sealed::Kind for Local {}
 
 /// A nonlocal builder.
-/// What type of builder do we have?
 #[derive(Debug)]
 pub struct NonLocal;
 impl sealed::Kind for NonLocal {}
