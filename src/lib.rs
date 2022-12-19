@@ -16,7 +16,7 @@
 //! 
 //! async_std::task::block_on(async {
 //!     let res = async { "nori is a horse" }
-//!         .spawn()
+//!         .par()
 //!         .name("meow".into())
 //!         .await;
 //!     assert_eq!(res, "nori is a horse");

@@ -47,7 +47,7 @@ impl<Fut: Future> PinnedDrop for JoinHandle<Fut> {
 /// Extend the `Future` trait.
 pub trait FutureExt: Future + Sized {
     /// Spawn a task on a thread pool
-    fn spawn(self) -> Builder<Self>
+    fn par(self) -> Builder<Self>
     where
         Self: Send,
     {
@@ -98,9 +98,9 @@ mod test {
     use crate::prelude::*;
 
     #[test]
-    fn spawn() {
+    fn par() {
         async_std::task::block_on(async {
-            let res = async { "nori is a horse" }.spawn().await;
+            let res = async { "nori is a horse" }.par().await;
             assert_eq!(res, "nori is a horse");
         })
     }
@@ -109,7 +109,7 @@ mod test {
     fn name() {
         async_std::task::block_on(async {
             let res = async { "nori is a horse" }
-                .spawn()
+                .par()
                 .name("meow".into())
                 .await;
             assert_eq!(res, "nori is a horse");
