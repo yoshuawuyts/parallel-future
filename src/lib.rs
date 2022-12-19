@@ -33,6 +33,8 @@ use std::task::{Context, Poll};
 
 use async_std::task;
 
+mod stream;
+
 /// The `tasky` prelude.
 pub mod prelude {
     pub use super::FutureExt as _;
