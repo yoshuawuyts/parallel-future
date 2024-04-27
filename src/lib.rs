@@ -1,10 +1,10 @@
-//! fluent async task experiments
-//! 
-//! Read more about it in the [post on postfix
-//! spawn](https://blog.yoshuawuyts.com/postfix-spawn/). This is an experiment
-//! in moving the design of tasks from a model where "tasks are async threads"
-//! to a model where"tasks are parallel futures".
-//! 
+//! Fluent async task experiments
+//!
+//! Read more about it in the ["postfix
+//! spawn" post](https://blog.yoshuawuyts.com/postfix-spawn/). This is an experiment
+//! moving tasks from a model where "tasks are async threads" to a model where:
+//! "tasks are parallel futures".
+//!
 //! This means tasks will no longer start unless explicitly `.await`ed, dangling
 //! tasks become a thing of the past, and by default async Rust will act
 //! structurally concurrent.
@@ -13,7 +13,7 @@
 //!
 //! ```
 //! use tasky::prelude::*;
-//! 
+//!
 //! async_std::task::block_on(async {
 //!     let res = async { "nori is a horse" }
 //!         .spawn()
@@ -42,13 +42,13 @@ pub mod prelude {
 #[derive(Debug)]
 #[pin_project(PinnedDrop)]
 #[must_use = "futures do nothing unless you `.await` or poll them"]
-pub struct JoinHandle<Fut: Future> {
+pub struct ParallelFuture<Fut: Future> {
     builder: Option<Builder<Fut>>,
     #[pin]
     handle: Option<task::JoinHandle<Fut::Output>>,
 }
 
-impl<Fut> Future for JoinHandle<Fut>
+impl<Fut> Future for ParallelFuture<Fut>
 where
     Fut: Future + Send + 'static,
     Fut::Output: Send + 'static,
@@ -66,7 +66,7 @@ where
 
 /// Cancel a task when dropped.
 #[pinned_drop]
-impl<Fut: Future> PinnedDrop for JoinHandle<Fut> {
+impl<Fut: Future> PinnedDrop for ParallelFuture<Fut> {
     fn drop(self: Pin<&mut Self>) {
         let mut this = self.project();
         let handle = this.handle.take().unwrap();
@@ -113,10 +113,10 @@ where
 {
     type Output = Fut::Output;
 
-    type IntoFuture = JoinHandle<Fut>;
+    type IntoFuture = ParallelFuture<Fut>;
 
     fn into_future(self) -> Self::IntoFuture {
-        JoinHandle {
+        ParallelFuture {
             builder: Some(self),
             handle: None,
         }
