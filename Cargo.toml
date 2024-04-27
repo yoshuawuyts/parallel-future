@@ -1,6 +1,6 @@
 [package]
 name = "tasky"
-version = "4.0.0"
+version = "5.0.0"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/yoshuawuyts/tasky"
 documentation = "https://docs.rs/tasky"
@@ -9,9 +9,7 @@ readme = "README.md"
 edition = "2018"
 keywords = []
 categories = []
-authors = [
-    "Yoshua Wuyts <rust@yosh.is>"
-]
+authors = ["Yoshua Wuyts <rust@yosh.is>"]
 
 [features]
 
