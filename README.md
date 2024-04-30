@@ -1,7 +1,7 @@
 <h1 align="center">parallel-future</h1>
 <div align="center">
   <strong>
-    fluent async task experiments
+    structured parallel execution for async Rust
   </strong>
 </div>
 
