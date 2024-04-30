@@ -1,9 +1,9 @@
 [package]
-name = "tasky"
+name = "parallel-future"
 version = "6.0.0"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/yoshuawuyts/tasky"
-documentation = "https://docs.rs/tasky"
+repository = "https://github.com/yoshuawuyts/parallel-future"
+documentation = "https://docs.rs/parallel-future"
 description = "fluent async task experiments"
 readme = "README.md"
 edition = "2018"

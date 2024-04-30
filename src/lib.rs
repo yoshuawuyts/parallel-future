@@ -24,7 +24,7 @@
 //! # Examples
 //!
 //! ```
-//! use tasky::prelude::*;
+//! use parallel_future::prelude::*;
 //! use futures_concurrency::prelude::*;
 //!
 //! async_std::task::block_on(async {
@@ -46,7 +46,7 @@ use std::task::{Context, Poll};
 
 use async_std::task;
 
-/// The `tasky` prelude.
+/// The `parallel-future` prelude.
 pub mod prelude {
     pub use super::IntoFutureExt as _;
 }
@@ -58,7 +58,7 @@ pub mod prelude {
 /// # Examples
 ///
 /// ```
-/// use tasky::prelude::*;
+/// use parallel_future::prelude::*;
 /// use futures_concurrency::prelude::*;
 ///
 /// async_std::task::block_on(async {
@@ -110,7 +110,7 @@ where
     /// # Examples
     ///
     /// ```
-    /// use tasky::prelude::*;
+    /// use parallel_future::prelude::*;
     /// use futures_concurrency::prelude::*;
     ///
     /// async_std::task::block_on(async {

@@ -1,4 +1,4 @@
-<h1 align="center">tasky</h1>
+<h1 align="center">parallel-future</h1>
 <div align="center">
   <strong>
     fluent async task experiments
@@ -9,17 +9,17 @@
 
 <div align="center">
   <!-- Crates version -->
-  <a href="https://crates.io/crates/tasky">
-    <img src="https://img.shields.io/crates/v/tasky.svg?style=flat-square"
+  <a href="https://crates.io/crates/parallel-future">
+    <img src="https://img.shields.io/crates/v/parallel-future.svg?style=flat-square"
     alt="Crates.io version" />
   </a>
   <!-- Downloads -->
-  <a href="https://crates.io/crates/tasky">
-    <img src="https://img.shields.io/crates/d/tasky.svg?style=flat-square"
+  <a href="https://crates.io/crates/parallel-future">
+    <img src="https://img.shields.io/crates/d/parallel-future.svg?style=flat-square"
       alt="Download" />
   </a>
   <!-- docs.rs docs -->
-  <a href="https://docs.rs/tasky">
+  <a href="https://docs.rs/parallel-future">
     <img src="https://img.shields.io/badge/docs-latest-blue.svg?style=flat-square"
       alt="docs.rs docs" />
   </a>
@@ -27,15 +27,15 @@
 
 <div align="center">
   <h3>
-    <a href="https://docs.rs/tasky">
+    <a href="https://docs.rs/parallel-future">
       API Docs
     </a>
     <span> | </span>
-    <a href="https://github.com/yoshuawuyts/tasky/releases">
+    <a href="https://github.com/yoshuawuyts/parallel-future/releases">
       Releases
     </a>
     <span> | </span>
-    <a href="https://github.com/yoshuawuyts/tasky/blob/master.github/CONTRIBUTING.md">
+    <a href="https://github.com/yoshuawuyts/parallel-future/blob/master.github/CONTRIBUTING.md">
       Contributing
     </a>
   </h3>
@@ -43,7 +43,7 @@
 
 ## Installation
 ```sh
-$ cargo add tasky
+$ cargo add parallel-future
 ```
 
 ## Safety
@@ -57,9 +57,9 @@ look at some of these issues:
 - [Issues labeled "good first issue"][good-first-issue]
 - [Issues labeled "help wanted"][help-wanted]
 
-[contributing]: https://github.com/yoshuawuyts/tasky/blob/master.github/CONTRIBUTING.md
-[good-first-issue]: https://github.com/yoshuawuyts/tasky/labels/good%20first%20issue
-[help-wanted]: https://github.com/yoshuawuyts/tasky/labels/help%20wanted
+[contributing]: https://github.com/yoshuawuyts/parallel-future/blob/master.github/CONTRIBUTING.md
+[good-first-issue]: https://github.com/yoshuawuyts/parallel-future/labels/good%20first%20issue
+[help-wanted]: https://github.com/yoshuawuyts/parallel-future/labels/help%20wanted
 
 ## License
 
