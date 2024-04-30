@@ -18,8 +18,8 @@
 //! `ParallelFuture` starts lazily and does not provide a manual `detach`
 //! method. However it can be manually polled once and then passed to
 //! `mem::forget`, which will keep the future running on another thread. In the
-//! absence of unforgettable types (linear types), Rust cannot `ParallelFuture`s
-//! from being unmanaged.
+//! absence of unforgettable types (linear types), Rust cannot prevent
+//! `ParallelFuture`s from becoming unmanaged (dangling).
 //!
 //! # Examples
 //!

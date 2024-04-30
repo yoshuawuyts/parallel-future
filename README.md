@@ -46,6 +46,21 @@
 $ cargo add parallel-future
 ```
 
+## Examples
+
+```rust
+use parallel_future::prelude::*;
+use futures_concurrency::prelude::*;
+
+async_std::task::block_on(async {
+    let a = async { 1 }.par();        // ← returns `ParallelFuture`
+    let b = async { 2 }.par();        // ← returns `ParallelFuture`
+
+    let (a, b) = (a, b).join().await; // ← concurrent `.await`
+    assert_eq!(a + b, 3);
+})
+```
+
 ## Safety
 This crate uses ``#![deny(unsafe_code)]`` to ensure everything is implemented in
 100% Safe Rust.
