@@ -80,7 +80,7 @@ pub struct ParallelFuture<Fut: IntoFuture> {
 
 impl<Fut> Future for ParallelFuture<Fut>
 where
-    Fut: IntoFuture + Send + 'static,
+    Fut: IntoFuture,
     Fut::IntoFuture: Send + 'static,
     Fut::Output: Send + 'static,
 {
