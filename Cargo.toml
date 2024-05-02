@@ -1,6 +1,6 @@
 [package]
 name = "parallel-future"
-version = "6.0.2"
+version = "6.0.3"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/yoshuawuyts/parallel-future"
 documentation = "https://docs.rs/parallel-future"
