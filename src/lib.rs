@@ -72,30 +72,38 @@ pub mod prelude {
 #[derive(Debug)]
 #[pin_project(PinnedDrop)]
 #[must_use = "futures do nothing unless you `.await` or poll them"]
-pub struct ParallelFuture<Fut: Future> {
+pub struct ParallelFuture<Fut: IntoFuture> {
+    into_future: Option<Fut>,
     #[pin]
     handle: Option<task::JoinHandle<Fut::Output>>,
 }
 
 impl<Fut> Future for ParallelFuture<Fut>
 where
-    Fut: Future + Send + 'static,
+    Fut: IntoFuture,
+    Fut::IntoFuture: Send + 'static,
     Fut::Output: Send + 'static,
 {
-    type Output = <Fut as Future>::Output;
+    type Output = <Fut as IntoFuture>::Output;
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let this = self.project();
+        let mut this = self.project();
+        if this.handle.is_none() {
+            let into_fut = this.into_future.take().unwrap().into_future();
+            let handle = task::spawn(into_fut.into_future());
+            *this.handle = Some(handle);
+        }
         Pin::new(&mut this.handle.as_pin_mut().unwrap()).poll(cx)
     }
 }
 
 /// Cancel the `ParallelFuture` when dropped.
 #[pinned_drop]
-impl<Fut: Future> PinnedDrop for ParallelFuture<Fut> {
+impl<Fut: IntoFuture> PinnedDrop for ParallelFuture<Fut> {
     fn drop(self: Pin<&mut Self>) {
         let mut this = self.project();
-        let handle = this.handle.take().unwrap();
-        let _ = handle.cancel();
+        if let Some(handle) = this.handle.take() {
+            let _ = handle.cancel();
+        }
     }
 }
 
@@ -121,9 +129,10 @@ where
     ///     assert_eq!(a + b, 3);
     /// })
     /// ```
-    fn par(self) -> ParallelFuture<<Self as IntoFuture>::IntoFuture> {
+    fn par(self) -> ParallelFuture<Self> {
         ParallelFuture {
-            handle: Some(task::spawn(self.into_future())),
+            into_future: Some(self),
+            handle: None,
         }
     }
 }
@@ -138,6 +147,13 @@ where
 
 #[cfg(test)]
 mod test {
+    use std::{
+        sync::{Arc, Mutex},
+        time::Duration,
+    };
+
+    use async_std::task;
+
     use super::prelude::*;
 
     #[test]
@@ -145,6 +161,21 @@ mod test {
         async_std::task::block_on(async {
             let res = async { "nori is a horse" }.par().await;
             assert_eq!(res, "nori is a horse");
+        })
+    }
+
+    #[test]
+    fn is_lazy() {
+        async_std::task::block_on(async {
+            let polled = Arc::new(Mutex::new(false));
+            let polled_2 = polled.clone();
+            let _res = async move {
+                *polled_2.lock().unwrap() = true;
+            }
+            .par();
+
+            task::sleep(Duration::from_millis(500)).await;
+            assert_eq!(*polled.lock().unwrap(), false);
         })
     }
 }
