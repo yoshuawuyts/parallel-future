@@ -13,13 +13,13 @@
 //! use parallel_future::prelude::*;
 //! use futures_concurrency::prelude::*;
 //!
-//! async_std::task::block_on(async {
+//! async {
 //!     let a = async { 1 }.par();        // ← returns `ParallelFuture`
 //!     let b = async { 2 }.par();        // ← returns `ParallelFuture`
 //!
 //!     let (a, b) = (a, b).join().await; // ← concurrent `.await`
 //!     assert_eq!(a + b, 3);
-//! })
+//! };
 //! ```
 //!
 //! # Limitations
@@ -44,7 +44,10 @@ use std::future::{Future, IntoFuture};
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
+#[cfg(feature = "async-std")]
 use async_std::task;
+#[cfg(feature = "tokio")]
+use tokio::task;
 
 /// The `parallel-future` prelude.
 pub mod prelude {
@@ -61,13 +64,13 @@ pub mod prelude {
 /// use parallel_future::prelude::*;
 /// use futures_concurrency::prelude::*;
 ///
-/// async_std::task::block_on(async {
+/// async {
 ///     let a = async { 1 }.par();        // ← returns `ParallelFuture`
 ///     let b = async { 2 }.par();        // ← returns `ParallelFuture`
 ///
 ///     let (a, b) = (a, b).join().await; // ← concurrent `.await`
 ///     assert_eq!(a + b, 3);
-/// })
+/// };
 /// ```
 #[derive(Debug)]
 #[pin_project(PinnedDrop)]
@@ -92,7 +95,13 @@ where
             let handle = task::spawn(into_fut.into_future());
             *this.handle = Some(handle);
         }
-        Pin::new(&mut this.handle.as_pin_mut().unwrap()).poll(cx)
+        #[cfg(feature = "async-std")]
+        let map_fn = std::convert::identity;
+        #[cfg(feature = "tokio")]
+        let map_fn = |it: Result<Self::Output, task::JoinError>| it.expect("future panicked");
+        Pin::new(&mut this.handle.as_pin_mut().unwrap())
+            .poll(cx)
+            .map(map_fn)
     }
 }
 
@@ -103,7 +112,10 @@ impl<Fut: IntoFuture> PinnedDrop for ParallelFuture<Fut> {
         let mut this = self.project();
         if let Some(handle) = this.handle.take() {
             #[allow(clippy::let_underscore_future)]
+            #[cfg(feature = "async-std")]
             let _ = handle.cancel();
+            #[cfg(feature = "tokio")]
+            handle.abort();
         }
     }
 }
@@ -122,13 +134,13 @@ where
     /// use parallel_future::prelude::*;
     /// use futures_concurrency::prelude::*;
     ///
-    /// async_std::task::block_on(async {
+    /// async {
     ///     let a = async { 1 }.par();        // ← returns `ParallelFuture`
     ///     let b = async { 2 }.par();        // ← returns `ParallelFuture`
     ///
     ///     let (a, b) = (a, b).join().await; // ← concurrent `.await`
     ///     assert_eq!(a + b, 3);
-    /// })
+    /// };
     /// ```
     fn par(self) -> ParallelFuture<Self> {
         ParallelFuture {
