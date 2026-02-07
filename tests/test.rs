@@ -3,14 +3,12 @@ use std::{
     time::Duration,
 };
 
-use async_std::task;
-
 use futures_concurrency::prelude::*;
 use parallel_future::prelude::*;
 
 #[test]
 fn spawn() {
-    async_std::task::block_on(async {
+    smol::block_on(async {
         let res = async { "nori is a horse" }.par().await;
         assert_eq!(res, "nori is a horse");
     })
@@ -18,7 +16,7 @@ fn spawn() {
 
 #[test]
 fn with_join() {
-    async_std::task::block_on(async {
+    smol::block_on(async {
         // A parallel execution of two futures
         let a = async { 1 }.par();
         let b = async { 2 }.par();
@@ -30,7 +28,7 @@ fn with_join() {
 
 #[test]
 fn is_lazy() {
-    async_std::task::block_on(async {
+    smol::block_on(async {
         let polled = Arc::new(Mutex::new(false));
         let polled_2 = polled.clone();
         let _res = async move {
@@ -38,7 +36,7 @@ fn is_lazy() {
         }
         .par();
 
-        task::sleep(Duration::from_millis(500)).await;
+        smol::Timer::after(Duration::from_millis(500)).await;
         assert_eq!(*polled.lock().unwrap(), false);
     })
 }

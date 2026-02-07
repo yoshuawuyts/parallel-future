@@ -13,7 +13,7 @@
 //! use parallel_future::prelude::*;
 //! use futures_concurrency::prelude::*;
 //!
-//! async_std::task::block_on(async {
+//! smol::block_on(async {
 //!     let a = async { 1 }.par();        // ← returns `ParallelFuture`
 //!     let b = async { 2 }.par();        // ← returns `ParallelFuture`
 //!
@@ -44,8 +44,6 @@ use std::future::{Future, IntoFuture};
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
-use async_std::task;
-
 /// The `parallel-future` prelude.
 pub mod prelude {
     pub use super::IntoFutureExt as _;
@@ -61,7 +59,7 @@ pub mod prelude {
 /// use parallel_future::prelude::*;
 /// use futures_concurrency::prelude::*;
 ///
-/// async_std::task::block_on(async {
+/// smol::block_on(async {
 ///     let a = async { 1 }.par();        // ← returns `ParallelFuture`
 ///     let b = async { 2 }.par();        // ← returns `ParallelFuture`
 ///
@@ -75,7 +73,7 @@ pub mod prelude {
 pub struct ParallelFuture<Fut: IntoFuture> {
     into_future: Option<Fut>,
     #[pin]
-    handle: Option<task::JoinHandle<Fut::Output>>,
+    handle: Option<smol::Task<Fut::Output>>,
 }
 
 impl<Fut> Future for ParallelFuture<Fut>
@@ -89,7 +87,7 @@ where
         let mut this = self.project();
         if this.handle.is_none() {
             let into_fut = this.into_future.take().unwrap().into_future();
-            let handle = task::spawn(into_fut.into_future());
+            let handle = smol::spawn(into_fut.into_future());
             *this.handle = Some(handle);
         }
         Pin::new(&mut this.handle.as_pin_mut().unwrap()).poll(cx)
@@ -122,7 +120,7 @@ where
     /// use parallel_future::prelude::*;
     /// use futures_concurrency::prelude::*;
     ///
-    /// async_std::task::block_on(async {
+    /// smol::block_on(async {
     ///     let a = async { 1 }.par();        // ← returns `ParallelFuture`
     ///     let b = async { 2 }.par();        // ← returns `ParallelFuture`
     ///
