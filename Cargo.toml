@@ -14,7 +14,7 @@ authors = ["Yoshua Wuyts <rust@yosh.is>"]
 [features]
 
 [dependencies]
-async-std = { version = "1.10.0", features = ["unstable"] }
+smol = { version = "2.0.2" }
 futures-concurrency = "7.5.0"
 pin-project = "1.0.10"
 
